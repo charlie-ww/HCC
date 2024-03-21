@@ -222,7 +222,38 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
                         annotator.box_label(xyxy, label, color=colors(c, True))
-                        print(xyxy[0].item(),xyxy[1].item(), xyxy[2].item(), xyxy[3].item(), label)
+                        #print(xyxy)
+                        #print(xyxy[0].item(),xyxy[1].item(), xyxy[2].item(), xyxy[3].item(), label)
+                        #while see person
+                        if target in label:
+                            print(xyxy[0].item(),xyxy[1].item(), xyxy[2].item(), xyxy[3].item(), label)
+                            #xyxy[0].item()=left, xyxy[1].item()=bottom, xyxy[2].item()=right, xyxy[3].item()=top
+                            length = 480
+                            width = 640
+                            cover = (xyxy[2].item() - xyxy[0].item()) * (xyxy[3].item() - xyxy[1].item())/length/width*100
+                            x = (xyxy[0].item() + xyxy[2].item())/2
+                            y = (xyxy[1].item() + xyxy[3].item())/2
+                            print("center: ", x, y, "cover:", cover)
+                            command = "forward 10"
+                            #command: "forward 10" or "left 10" or "right 10" or "land"
+                            if x < width/2 - 30:
+                                command = "left 20"
+                            elif x > width/2 + 30:
+                                command = "right 20"
+                            
+                            print("send:", command)
+                            sock.sendto(command.encode("utf-8"), tello_address1)
+                            time.sleep(3)
+                            command = "forward 20"
+                            print("send:", command)
+                            sock.sendto(command.encode("utf-8"), tello_address1)
+                            time.sleep(3)
+                            if cover>30:
+                                command = "land"
+                                print("send:", command)
+                                sock.sendto(command.encode("utf-8"), tello_address1)
+                                time.sleep(3)
+                        '''
                         if target in label and target=="person":
                             sock.sendto(personCom[0].encode("utf-8"), tello_address1)
                             print("forward")
@@ -243,6 +274,7 @@ def run(
                             sock.sendto(carCom[2].encode("utf-8"), tello_address1)
                             print("land")
                             return
+                            '''
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True)
 
@@ -335,7 +367,9 @@ personCom=["forward 160", "left 52", "land"]
 carCom=["forward 160", "right 52", "land"]
 tello_address1 = ('192.168.10.1', 8889)
 if __name__ == "__main__":
-    target = input()
+    #target = input("car or person: ")
+    #taatarget = "person"
+    target = "car"
     host = ''
     port = 9000
     locaddr = (host,port) 
@@ -348,9 +382,9 @@ if __name__ == "__main__":
     
     sock.sendto(message1[0].encode("utf-8"), tello_address1)
     time.sleep(3)
-    sock.sendto(message1[1].encode("utf-8"), tello_address1)
+    sock.sendto(message1[2].encode("utf-8"), tello_address1)    #streamon
     time.sleep(3)
-    sock.sendto(message1[2].encode("utf-8"), tello_address1)
+    sock.sendto(message1[1].encode("utf-8"), tello_address1)    #takeoff
 
     opt = parse_opt()
     main(opt)
